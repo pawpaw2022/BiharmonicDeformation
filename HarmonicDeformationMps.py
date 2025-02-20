@@ -6,23 +6,23 @@ import igl  # Only used to compute cotangent Laplacian for comparison
 
 def compute_cotangent_laplacian(vertices: torch.Tensor, faces: torch.Tensor) -> torch.Tensor:
     """
-    Compute the cotangent Laplacian matrix using dense tensors for MPS compatibility.
+    Compute the cotangent Laplacian matrix using CPU for sparse operations.
     """
-    device = vertices.device
-    
-    # Move to CPU, compute Laplacian
+    # Move to CPU for computation
     vertices_np = vertices.cpu().numpy()
     faces_np = faces.cpu().numpy()
-    L_np = -igl.cotmatrix(vertices_np, faces_np)
     
-    # Convert sparse matrix to dense numpy array first
-    L_dense_np = L_np.todense()
+    # Compute Laplacian on CPU
+    L_sparse = -igl.cotmatrix(vertices_np, faces_np)
     
-    # Convert numpy array to tensor
-    L_dense = torch.tensor(L_dense_np, dtype=torch.float32, device=device)
+    # Convert sparse matrix directly to dense numpy array
+    L_dense_np = L_sparse.todense()
     
-    # Clear numpy arrays
-    del vertices_np, faces_np, L_np, L_dense_np
+    # Convert to tensor and move to the original device
+    L_dense = torch.tensor(L_dense_np, dtype=torch.float32, device=vertices.device)
+    
+    # Clear memory
+    del vertices_np, faces_np, L_sparse, L_dense_np
     
     return L_dense
 
