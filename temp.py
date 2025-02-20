@@ -1,24 +1,37 @@
 import polyscope as ps
+import numpy as np
+import trimesh
 
 # Initialize polyscope
 ps.init()
 
-### Register a point cloud
-# `my_points` is a Nx3 numpy array
-ps.register_point_cloud("my points", my_points)
+# Load the koala mesh using trimesh
+mesh = trimesh.load("koala/koala.obj")
 
-### Register a mesh
-# `verts` is a Nx3 numpy array of vertex positions
-# `faces` is a Fx3 array of indices, or a nested list
-ps.register_surface_mesh("my mesh", verts, faces, smooth_shade=True)
+# Extract vertices and faces
+verts = np.array(mesh.vertices)
+faces = np.array(mesh.faces)
 
-# Add a scalar function and a vector function defined on the mesh
-# vertex_scalar is a length V numpy array of values
-# face_vectors is an Fx3 array of vectors per face
-ps.get_surface_mesh("my mesh").add_scalar_quantity("my_scalar", 
-        vertex_scalar, defined_on='vertices', cmap='blues')
-ps.get_surface_mesh("my mesh").add_vector_quantity("my_vector", 
-        face_vectors, defined_on='faces', color=(0.2, 0.5, 0.5))
+# Register the mesh with polyscope
+ps_mesh = ps.register_surface_mesh(
+    "koala", 
+    verts, 
+    faces,
+    smooth_shade=True,
+    material="clay",
+    color=[0.8, 0.8, 1.0],
+    edge_width=1.0
+)
 
-# View the point cloud and mesh we just registered in the 3D UI
+# Add some visualization features
+# Height-based coloring
+vertex_y = verts[:, 1]  # Y coordinates
+ps_mesh.add_scalar_quantity(
+    "height",
+    vertex_y,
+    enabled=True,
+    cmap='viridis'
+)
+
+# Show the mesh in the 3D UI
 ps.show()
