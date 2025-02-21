@@ -1,30 +1,76 @@
 import torch
-import numpy as np
-from scipy.sparse import coo_matrix
-import igl  # Only used to compute cotangent Laplacian for comparison
 
+def compute_angles(v1: torch.Tensor, v2: torch.Tensor, v3: torch.Tensor) -> torch.Tensor:
+    """
+    Compute angles at v1 for triangles defined by vertices v1, v2, v3.
+    Returns cosine of angles for stable computation.
+    """
+    e1 = v2 - v1  # edge from v1 to v2
+    e2 = v3 - v1  # edge from v1 to v3
+    
+    # Normalize edges
+    e1_norm = torch.norm(e1, dim=1, keepdim=True)
+    e2_norm = torch.norm(e2, dim=1, keepdim=True)
+    
+    # Compute cosine using dot product of normalized vectors
+    cos_angle = torch.sum(e1 * e2, dim=1) / (e1_norm.squeeze() * e2_norm.squeeze())
+    
+    # Clamp for numerical stability
+    cos_angle = torch.clamp(cos_angle, -1.0 + 1e-7, 1.0 - 1e-7)
+    
+    return cos_angle
 
 def compute_cotangent_laplacian(vertices: torch.Tensor, faces: torch.Tensor) -> torch.Tensor:
     """
-    Compute the cotangent Laplacian matrix using CPU for sparse operations.
+    Compute the cotangent Laplacian matrix using sparse construction for better performance.
     """
-    # Move to CPU for computation
-    vertices_np = vertices.cpu().numpy()
-    faces_np = faces.cpu().numpy()
+    V = vertices.shape[0]    
     
-    # Compute Laplacian on CPU
-    L_sparse = -igl.cotmatrix(vertices_np, faces_np)
+    # Get vertices of triangles
+    v1 = vertices[faces[:, 0]]
+    v2 = vertices[faces[:, 1]]
+    v3 = vertices[faces[:, 2]]
     
-    # Convert sparse matrix directly to dense numpy array
-    L_dense_np = L_sparse.todense()
+    # Compute angles at each vertex of triangles
+    cos_1 = compute_angles(v1, v2, v3)
+    cos_2 = compute_angles(v2, v3, v1)
+    cos_3 = compute_angles(v3, v1, v2)
     
-    # Convert to tensor and move to the original device
-    L_dense = torch.tensor(L_dense_np, dtype=torch.float32, device=vertices.device)
+    # Convert cosine to cotangent using: cot(x) = cos(x)/sin(x)
+    sin_1 = torch.sqrt(1 - cos_1 * cos_1)
+    sin_2 = torch.sqrt(1 - cos_2 * cos_2)
+    sin_3 = torch.sqrt(1 - cos_3 * cos_3)
     
-    # Clear memory
-    del vertices_np, faces_np, L_sparse, L_dense_np
+    cot_1 = cos_1 / sin_1
+    cot_2 = cos_2 / sin_2
+    cot_3 = cos_3 / sin_3
     
-    return L_dense
+    # Prepare indices and values for sparse matrix construction
+    i = faces[:, [1, 2, 2, 0, 0, 1]].reshape(-1)
+    j = faces[:, [2, 1, 0, 2, 1, 0]].reshape(-1)
+    
+    # Each edge gets contribution from both adjacent triangles
+    values = torch.cat([
+        0.5 * cot_1,
+        0.5 * cot_2,
+        0.5 * cot_3,
+        0.5 * cot_1,
+        0.5 * cot_2,
+        0.5 * cot_3
+    ])
+    
+    # Create sparse matrix in COO format
+    indices = torch.stack([i, j])
+    L_sparse = torch.sparse_coo_tensor(indices, -values, (V, V))
+    
+    # Convert to dense and make symmetric
+    L = L_sparse.to_dense()
+    L = L + L.T
+    
+    # Set diagonal elements to negative sum of off-diagonal elements
+    L.diagonal().copy_(-torch.sum(L, dim=1))
+    
+    return L
 
 def solve_linear_system(A: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """
