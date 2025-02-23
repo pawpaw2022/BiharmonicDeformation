@@ -37,16 +37,16 @@ def compute_cotangent_laplacian(vertices: torch.Tensor, faces: torch.Tensor) -> 
     cos_3 = compute_angles(v3, v1, v2)
     
     # Convert cosine to cotangent using: cot(x) = cos(x)/sin(x)
-    sin_1 = torch.sqrt(1 - cos_1 * cos_1)
+    sin_1 = torch.sqrt(1 - cos_1 * cos_1) # sin(x) = sqrt(1 - cos(x)^2)
     sin_2 = torch.sqrt(1 - cos_2 * cos_2)
     sin_3 = torch.sqrt(1 - cos_3 * cos_3)
     
-    cot_1 = cos_1 / sin_1
+    cot_1 = cos_1 / sin_1   # cot(x) = cos(x)/sin(x)
     cot_2 = cos_2 / sin_2
     cot_3 = cos_3 / sin_3
     
     # Prepare indices and values for sparse matrix construction
-    i = faces[:, [1, 2, 2, 0, 0, 1]].reshape(-1)
+    i = faces[:, [1, 2, 2, 0, 0, 1]].reshape(-1)    
     j = faces[:, [2, 1, 0, 2, 1, 0]].reshape(-1)
     
     # Each edge gets contribution from both adjacent triangles
@@ -94,16 +94,14 @@ def solve_linear_system(A: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     """
     device = A.device
     try:
-        # Try using default solver
         return torch.linalg.solve(A, b)
     except RuntimeError:
         try:
-            # Try QR decomposition
+            # QR decomposition
             Q, R = torch.linalg.qr(A)
             y = torch.matmul(Q.T, b)
             return torch.triangular_solve(y, R, upper=True)[0]
         except RuntimeError:
-            # Fallback to CPU if GPU solvers fail
             A_cpu = A.cpu()
             b_cpu = b.cpu()
             x_cpu = torch.linalg.solve(A_cpu, b_cpu)
@@ -139,12 +137,12 @@ def harmonic_deformation(
     solution[boundary_vertices] = boundary_values
     
     # Create system matrix A and right-hand side b
-    b = -torch.mm(L, solution)
+    b = -torch.mm(L, solution) # b = -L^2x
     
     # Separate system into known and unknown parts
-    A_ii = L[interior_mask][:, interior_mask]
-    A_ib = L[interior_mask][:, ~interior_mask]
-    b_i = b[interior_mask]
+    A_ii = L[interior_mask][:, interior_mask] # A_ii is the submatrix of L corresponding to the interior vertices
+    A_ib = L[interior_mask][:, ~interior_mask] # A_ib is the submatrix of L corresponding to the boundary vertices
+    b_i = b[interior_mask] # b_i is the right-hand side vector corresponding to the interior vertices
     
     # Clear L to free memory
     del L
