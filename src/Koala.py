@@ -2,6 +2,7 @@ import polyscope as ps
 import numpy as np
 import torch
 import pymeshlab
+import argparse  # Added for command-line argument parsing
 from HarmonicDeformation import harmonic_deformation
 
 def load_and_simplify_mesh(mesh_path: str, target_vertices: int) -> pymeshlab.MeshSet:
@@ -133,4 +134,12 @@ def main(mesh_path: str = "koala/koala.obj", target_vertices: int = 1000, mps: b
     ps.show()
 
 if __name__ == "__main__":
-    main()
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Koala Mesh Deformation Demo")
+    parser.add_argument("--mps", action="store_true", help="Use MPS (Metal Performance Shaders) for Mac devices")
+    parser.add_argument("--mesh", type=str, default="koala/koala.obj", help="Path to mesh file (default: koala/koala.obj)")
+    parser.add_argument("--vertices", type=int, default=1000, help="Target number of vertices after simplification (default: 1000)")
+    args = parser.parse_args()
+    
+    # Run the demo with command-line arguments
+    main(mesh_path=args.mesh, target_vertices=args.vertices, mps=args.mps)

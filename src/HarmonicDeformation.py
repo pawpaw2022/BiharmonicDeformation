@@ -1,4 +1,5 @@
 import torch
+import argparse  # Added for command-line argument parsing
 
 def compute_angles(v1: torch.Tensor, v2: torch.Tensor, v3: torch.Tensor) -> torch.Tensor:
     """
@@ -333,4 +334,10 @@ def demo(mps: bool = False) -> None:
     ps.show()
 
 if __name__ == "__main__":
-    demo()  # Use demo(mps=True) for MPS support on Mac
+    # Parse command-line arguments
+    parser = argparse.ArgumentParser(description="Harmonic Deformation Demo")
+    parser.add_argument("--mps", action="store_true", help="Use MPS (Metal Performance Shaders) for Mac devices")
+    args = parser.parse_args()
+    
+    # Run demo with MPS flag if specified
+    demo(mps=args.mps)
