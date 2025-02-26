@@ -74,7 +74,6 @@ def main(mesh_path: str = "koala/koala.obj", target_vertices: int = 1000, mps: b
     # Initialize polyscope
     ps.init()
     
-    # Setup device
     if mps:
         device = torch.device('mps' if torch.backends.mps.is_available() else 'cpu')
     else:
@@ -127,19 +126,15 @@ def main(mesh_path: str = "koala/koala.obj", target_vertices: int = 1000, mps: b
                 cmap='viridis'
             )
     
-    # Set the callback
     ps.set_user_callback(callback)
-    
-    # Show the mesh in the 3D UI
+
     ps.show()
 
 if __name__ == "__main__":
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Koala Mesh Deformation Demo")
     parser.add_argument("--mps", action="store_true", help="Use MPS (Metal Performance Shaders) for Mac devices")
     parser.add_argument("--mesh", type=str, default="koala/koala.obj", help="Path to mesh file (default: koala/koala.obj)")
     parser.add_argument("--vertices", type=int, default=1000, help="Target number of vertices after simplification (default: 1000)")
     args = parser.parse_args()
     
-    # Run the demo with command-line arguments
     main(mesh_path=args.mesh, target_vertices=args.vertices, mps=args.mps)
