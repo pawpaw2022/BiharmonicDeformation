@@ -4,6 +4,9 @@ A Python implementation of harmonic and biharmonic deformation techniques for 3D
 
 Biharmonic deformation is a powerful technique used in geometry processing, computer graphics, and computational geometry for smoothly deforming 3D shapes or meshes. It is particularly useful when we want to deform a shape while maintaining its smoothness and structural integrity. This method finds applications in mesh editing, shape interpolation, and surface modeling.
 
+![Biharmonic Deformation Demo](image.png)
+
+
 ## Features
 
 - Harmonic and biharmonic deformation of 3D meshes
@@ -24,7 +27,7 @@ Biharmonic deformation is a powerful technique used in geometry processing, comp
 
 1. Clone this repository:
    ```
-   git clone https://github.com/yourusername/BiharmonicDeformation.git
+   git clone https://github.com/pawpaw2022/BiharmonicDeformation
    cd BiharmonicDeformation
    ```
 
