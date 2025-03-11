@@ -126,3 +126,7 @@ For more information about biharmonic deformation and geometric processing techn
 https://paul-l-sining.notion.site/Biharmonic-Deformation-1a19dddde89c803094c7e85bf1ede2e8
 
 
+For our presentation slides, visit: 
+https://docs.google.com/presentation/d/1SHOtGzko9fwXSyt4h2hFVh-dQqeUCX7OVKDd_GKNKs0/edit#slide=id.g33345faad39_0_818
+
+
